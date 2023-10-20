@@ -1,0 +1,61 @@
+---
+title: "Thesis Analyses (IC)"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Let's start by loading in our packages:
+```{r packages, message = FALSE}
+library(tidyverse)
+library(readxl)
+library(rstatix)
+library(ggpubr)
+library(ez)
+library(emmeans)
+library(car)
+library(Hmisc)
+library(corrplot)
+```
+
+Now let's take a second to think about the data we have. Overall I have seven days on the full paradigm without injection, two full days with either saline or naltrexone injection, two days with either pure fat or pure sugar only, and a final two days with each animal's favorite diet ( measured as mean average kcal eaten per day) following either saline or naltrexone injection.
+
+My prospectus calls for 5 days of full paradigm training and 3 days of full paradigm testing, after which each animal's favorite diet was to be calculated from the 3 test days. For some reason, what we did instead was use all 7 days to calculate favorite diet. I think that's fine, but it leaves as an open question what we're calling training and what we're calling testing.
+
+I think for now, the best thing to do is to stick as close to my prospectus as I can. I need at least 3 days of test data, so that leaves the four previous days as training data. Let's start there.
+
+Let's read in our data:
+
+```{r read data}
+#Vector for column names and diet names
+column_names <- c("rat", "zero", "twenty", "forty", "sixty", "eighty", "hundred", "h2o", "day")
+diet_names <- c("zero", "twenty", "forty", "sixty", "eighty", "hundred")
+
+datap1_grams_wide <- read_excel("IC Test Data.xlsx", sheet = 14, range = "A3:I38", col_names = column_names)
+datap1_kcal_wide <- read_excel("IC Test Data.xlsx", sheet = 14, range = "K3:S38", col_names = column_names)
+
+#Convert negative values to zeroes
+datap1_grams_filtered <- datap1_grams_wide
+datap1_grams_filtered[datap1_grams_filtered < 0] <- 0
+
+datap1_kcal_filtered <- datap1_kcal_wide
+datap1_kcal_filtered[datap1_kcal_filtered < 0] <- 0
+
+#Drop water for now
+datap1_grams_filtered2 <- datap1_grams_filtered %>%
+  subset(select = -c(h2o))
+
+datap1_kcal_filtered2 <- datap1_kcal_filtered %>%
+  subset(select = -c(h2o))
+
+#Pivot to long format
+datap1_grams <- datap1_grams_filtered2 %>%
+  pivot_longer(cols = diet_names, names_to = "diet", values_to = "grams")
+
+datap1_kcals <- datap1_kcal_filtered2 %>%
+   pivot_longer(cols = diet_names, names_to = "diet", values_to = "kcals")
+```
+
