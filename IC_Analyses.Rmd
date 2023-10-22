@@ -301,3 +301,112 @@ A similar picture as with the weight data, but here the diet x condition interac
 ## Part 3
 
 ### Data Prep
+
+```{r data prep 3}
+
+column_names_p3 <- c("rat", "fav_blend", "fat", "sugar", "fav_blend_veh", "fav_blend_nal")
+diet_names_3 <- c("fat", "sugar", "fav_blend_veh", "fav_blend_nal")
+
+datap3_grams_wide <- read_excel("IC Test Data.xlsx", sheet = 16, range = "A3:F14", col_names = column_names_p3)
+datap3_kcal_wide <- read_excel("IC Test Data.xlsx", sheet = 16, range = "I3:N14", col_names = column_names_p3)
+
+#Convert negative values to zeroes
+datap3_grams_filtered <- datap3_grams_wide
+datap3_grams_filtered[datap3_grams_filtered < 0] <- 0
+
+datap3_kcal_filtered <- datap3_kcal_wide
+datap3_kcal_filtered[datap3_kcal_filtered < 0] <- 0
+
+
+#Pivot to long format
+datap3_grams <- datap3_grams_filtered %>%
+  pivot_longer(cols = diet_names_3, names_to = "condition", values_to = "grams")
+datap3_grams$condition <- factor(datap3_grams$condition,
+                           levels = diet_names_3)
+datap3_grams$rat <- factor(datap3_grams$rat,
+                            levels = rat_names)
+datap3_grams$fav_blend <- factor(datap3_grams$fav_blend,
+                            levels = c("Twenty", "Eighty"))
+
+datap3_kcals <- datap3_kcal_filtered %>%
+  pivot_longer(cols = diet_names_3, names_to = "condition", values_to = "kcals")
+datap3_grams$condition <- factor(datap3_grams$condition,
+                           levels = diet_names_3)
+datap3_grams$rat <- factor(datap3_grams$rat,
+                            levels = rat_names)
+datap3_grams$fav_blend <- factor(datap3_grams$fav_blend,
+                            levels = c("Twenty", "Eighty"))
+```
+
+### Initial visualizations
+
+```{r initial viz p3}
+ggboxplot(datap3_grams,
+          x = "condition", y = "grams", color = "condition")
+
+ggboxplot(datap3_kcals,
+          x = "condition", y = "kcals", color = "condition")
+```
+Things actually don't look as different between the kcal and weight data as I expected. However, I think it's going to be particularly important to present both pictures here so that the reader can draw their own conclusions.
+
+### Inferential analyses
+
+#### Grams
+
+```{r hypothesis test 3 grams}
+
+# Method 1
+exp2Grams3 <- aov(grams ~ condition + Error(rat/condition), data = datap3_grams)
+summary(exp2Grams3) 
+
+# Method 2
+grams.aov3 <- ezANOVA(data = datap3_grams,
+                    dv = .(grams),
+                    wid = .(rat),
+                    within = .(condition),
+                    return_aov = TRUE,
+                    type = 2)
+grams.aov3$ANOVA
+```
+
+And we have a significant effect of condition. Let's proceed to pairwise testing:
+
+```{r pairwise tests grams p3}
+pairwiseGrams3 <- datap3_grams %>%
+  pairwise_t_test(grams~condition, paired = TRUE,
+                  p.adjust.method = "bonferroni")
+pairwiseGrams3
+```
+So according to weight, we have significant difference in all comparisons except between pure sugar and the favorite blend after naltrexone. Looks like naltrexone partially did what we expected; sugar was the less preferred pure macro, and a shot of naltrexone decreased intake of the favorite blend (the highest consumption condition here) to on par with it.
+
+Even more surprisingly here, these rats strongly preferred fat over sugar. I *so* wish we'd given these guys DAMGO.
+
+#### Kcals
+
+```{r hypothesis test 3 kcals}
+
+# Method 1
+exp2Kcals3 <- aov(kcals ~ condition + Error(rat/condition), data = datap3_kcals)
+summary(exp2Kcals3) 
+
+# Method 2
+kcals.aov3 <- ezANOVA(data = datap3_kcals,
+                    dv = .(kcals),
+                    wid = .(rat),
+                    within = .(condition),
+                    return_aov = TRUE,
+                    type = 2)
+kcals.aov3$ANOVA
+```
+
+Again, highly significant effect of condition:
+
+```{r pairwise tests kcals p3}
+pairwiseKcals3 <- datap3_kcals %>%
+  pairwise_t_test(kcals~condition, paired = TRUE,
+                  p.adjust.method = "bonferroni")
+pairwiseKcals3
+```
+And here we do have a significant difference between naltrexone intake and sugar. I think this is an interesting result, but it's going to be difficult to present it. Also interestingly, there actually isn't a difference between fat intake and vehicle intake here, although I'm skeptical of this result because the fat is nearly double as caloric as the 20% diet that nearly half the rats preferred. 
+
+I think this does it for now! I'll probably want to come back and make a few plots, but for now I know the story I'm telling!
