@@ -7,6 +7,9 @@ date: "`r Sys.Date()`"
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+## Part 1
+
+### Intro
 
 Let's start by loading in our packages:
 ```{r packages, message = FALSE}
@@ -27,12 +30,15 @@ My prospectus calls for 5 days of full paradigm training and 3 days of full para
 
 I think for now, the best thing to do is to stick as close to my prospectus as I can. I need at least 3 days of test data, so that leaves the four previous days as training data. Let's start there.
 
+### Data Prep
+
 Let's read in our data:
 
 ```{r read data}
 #Vector for column names and diet names
 column_names <- c("rat", "zero", "twenty", "forty", "sixty", "eighty", "hundred", "h2o", "day")
 diet_names <- c("zero", "twenty", "forty", "sixty", "eighty", "hundred")
+rat_names <- c("IC1", "IC2", "IC3", "IC4", "IC5", "IC6", "IC7", "IC8", "IC9", "IC10", "IC11", "IC12")
 
 datap1_grams_wide <- read_excel("IC Test Data.xlsx", sheet = 14, range = "A3:I38", col_names = column_names)
 datap1_kcal_wide <- read_excel("IC Test Data.xlsx", sheet = 14, range = "K3:S38", col_names = column_names)
@@ -54,8 +60,244 @@ datap1_kcal_filtered2 <- datap1_kcal_filtered %>%
 #Pivot to long format
 datap1_grams <- datap1_grams_filtered2 %>%
   pivot_longer(cols = diet_names, names_to = "diet", values_to = "grams")
+datap1_grams$day <- factor(datap1_grams$day,
+                           levels = c("1", "2", "3"))
+datap1_grams$diet <- factor(datap1_grams$diet,
+                            levels = diet_names)
+datap1_grams$rat <- factor(datap1_grams$rat,
+                            levels = rat_names)
 
 datap1_kcals <- datap1_kcal_filtered2 %>%
    pivot_longer(cols = diet_names, names_to = "diet", values_to = "kcals")
+datap1_kcals$day <- factor(datap1_kcals$day,
+                           levels = c("1", "2", "3"))
+datap1_kcals$diet <- factor(datap1_kcals$diet,
+                            levels = diet_names)
+datap1_kcals$rat <- factor(datap1_kcals$rat,
+                            levels = rat_names)
 ```
 
+### Initial Vizualizations
+
+Now just like normally, I think the best thing to do is to look at some visualizations before I do anything else
+
+```{r initial viz}
+ggboxplot(datap1_grams,
+          x = "diet", y = "grams", color = "diet")
+
+ggboxplot(datap1_kcals,
+          x = "diet", y = "kcals", color = "diet")
+```
+This is interesting, and very different from the ID data. Here, it looks like there was a bifurcation between twenty and eighty percent as favorite diets. I already knew this since we had to give each rat it's favorite diet later in the study, but it's interesting to see it look so pronounced here.
+
+Next let's facet this by rat to see the breakdown for each individual:
+
+```{r initial viz 2}
+ggboxplot(datap1_grams,
+          x = "diet", y = "grams", color = "diet", facet.by = "rat")
+
+ggboxplot(datap1_kcals,
+          x = "diet", y = "kcals", color = "diet", facet.by = "rat")
+```
+
+Again, very much not the same as the ID data. It looks like rats run the gamut of favorite diets. These change some between datasets (which means I'll have to justify using caloric intake to choose favorite diets; shit), but not overwhelmingly. I wish we'd given DAMGO to these animals--we may have seen something really cool.
+
+In any case, because we're including day as a dependent variable in the final analysis, I want to get a sense of how much this picture changes by day:
+
+```{r initial viz 3}
+ggboxplot(datap1_grams,
+          x = "diet", y = "grams", color = "diet", facet.by = "day")
+
+ggboxplot(datap1_kcals,
+          x = "diet", y = "kcals", color = "diet", facet.by = "day")
+```
+
+So there's a healthy amount of variability between days, but not enough to significantly change the rank orderings of each diet.
+
+### Inferential Analysis
+
+Now for the part we've all been waiting for, the inferential analysis:
+
+```{r hypothesis test grams}
+res.aovGrams = anova_test(
+  data = datap1_grams,
+  dv = grams,
+  wid = rat,
+  within = c(diet, day),
+  type = 2
+)
+get_anova_table(res.aovGrams)
+
+#trying it a different way
+exp2Grams <- aov(grams ~ diet*day + Error(rat/(diet*day)), data = datap1_grams)
+summary(exp2Grams) 
+
+#And a third way because the first two don't match
+grams.aov <- ezANOVA(data = datap1_grams,
+                    dv = .(grams),
+                    wid = .(rat),
+                    within = .(diet, day),
+                    return_aov = TRUE,
+                    type = 2)
+grams.aov$ANOVA
+```
+
+The specific numbers between the alternate methods I'm using vary, but they all tell the same basic story. We have a main effect of diet, no effect of day, and no interaction. That's good, because a main effect of diet is all we were looking for. 
+
+Let's look further into this by using pairwise within subjects t-tests to see how diet groups differed from each other:
+
+```{r pairwise tests}
+pairwiseGrams <- datap1_grams %>%
+  pairwise_t_test(grams~diet, paired = TRUE,
+                  p.adjust.method = "bonferroni")
+pairwiseGrams
+```
+So from this it looks like even with Bonferroni corrections we have a decent number of significant comparisons. 80% and 20% don't actually significantly differ from each other (which is fascinating) but they're more consumed than pretty much everything else. 
+
+For completeness sake, I want to do this all over again with the calorie data
+
+```{r hypothesis test kcals}
+#trying it a different way
+exp2Kcals <- aov(kcals ~ diet*day + Error(rat/(diet*day)), data = datap1_kcals)
+summary(exp2Kcals) 
+
+#And a third way because the first two don't match
+kcals.aov <- ezANOVA(data = datap1_kcals,
+                    dv = .(kcals),
+                    wid = .(rat),
+                    within = .(diet, day),
+                    return_aov = TRUE,
+                    type = 2)
+kcals.aov$ANOVA
+```
+
+```{r pairwise tests kcals}
+pairwiseKcals <- datap1_kcals %>%
+  pairwise_t_test(kcals~diet, paired = TRUE,
+                  p.adjust.method = "bonferroni")
+pairwiseKcals
+```
+
+So again, a similar story. So far, things are looking how we expected!
+
+## Part 2
+
+### Data Prep
+
+Now to analyze the data from part 2! Let's read it in the same way as for the last experiment
+
+```{r data prep 2}
+
+column_names_p2 <- c("rat", "zero", "twenty", "forty", "sixty", "eighty", "hundred", "h2o", "condition")
+
+datap2_grams_wide <- read_excel("IC Test Data.xlsx", sheet = 15, range = "A3:I26", col_names = column_names_p2)
+datap2_kcal_wide <- read_excel("IC Test Data.xlsx", sheet = 15, range = "K3:S26", col_names = column_names_p2)
+
+#Convert negative values to zeroes
+datap2_grams_filtered <- datap2_grams_wide
+datap2_grams_filtered[datap2_grams_filtered < 0] <- 0
+
+datap2_kcal_filtered <- datap2_kcal_wide
+datap2_kcal_filtered[datap2_kcal_filtered < 0] <- 0
+
+#Drop water for now
+datap2_grams_filtered2 <- datap2_grams_filtered %>%
+  subset(select = -c(h2o))
+
+datap2_kcal_filtered2 <- datap2_kcal_filtered %>%
+  subset(select = -c(h2o))
+
+#Pivot to long format
+datap2_grams <- datap2_grams_filtered2 %>%
+  pivot_longer(cols = diet_names, names_to = "diet", values_to = "grams")
+datap2_grams$condition <- factor(datap2_grams$condition,
+                           levels = c("NAL", "VEH"))
+datap2_grams$diet <- factor(datap2_grams$diet,
+                            levels = diet_names)
+datap2_grams$rat <- factor(datap2_grams$rat,
+                            levels = rat_names)
+
+datap2_kcals <- datap2_kcal_filtered2 %>%
+   pivot_longer(cols = diet_names, names_to = "diet", values_to = "kcals")
+datap2_kcals$condition <- factor(datap2_kcals$condition,
+                           levels = c("NAL", "VEH"))
+datap2_kcals$diet <- factor(datap2_kcals$diet,
+                            levels = diet_names)
+datap2_kcals$rat <- factor(datap2_kcals$rat,
+                            levels = rat_names)
+```
+
+### Initial Vizualizations
+
+```{r initial viz p2}
+ggboxplot(datap2_grams,
+          x = "diet", y = "grams", color = "condition")
+
+ggboxplot(datap2_kcals,
+          x = "diet", y = "kcals", color = "condition")
+```
+Once again, the difference here is pretty stark. At least descriptively, naltrexone definitely decreased consumption, and it also functioned to sharply decrease the variability in the amount of each diet rats consumed.
+
+### Inferential Analysis
+
+Now for the part we've all been waiting for, the inferential analysis:
+
+```{r hypothesis test 2 grams}
+
+# Method 1
+exp2Grams2 <- aov(grams ~ diet*condition + Error(rat/(diet*condition)), data = datap2_grams)
+summary(exp2Grams2) 
+
+# Method 2
+grams.aov2 <- ezANOVA(data = datap2_grams,
+                    dv = .(grams),
+                    wid = .(rat),
+                    within = .(diet, condition),
+                    return_aov = TRUE,
+                    type = 2)
+grams.aov2$ANOVA
+```
+
+
+So we have main effects of diet and condition, but no interaction. So they consumed different amounts of the diets, and they consumed generally more on the saline day than the naltrexone day, but there wasn't a difference in the effect of naltrexone between diets. A bit of a bummer because I was hoping to dig into that interaction further, but that's real data for you.
+
+In any case, let's do our pairwise analyses
+
+```{r pairwise tests p2}
+pairwiseGrams2 <- datap2_grams %>%
+  pairwise_t_test(grams~diet, paired = TRUE,
+                  p.adjust.method = "bonferroni")
+pairwiseGrams2
+```
+
+So a similar story as from part 1. I would argue in this part of the experiment the rats showed a slightly more pronounced preference for the 20% diet over the 80%, but inferentially the picture is pretty similar.
+
+Again for completeness, let's repeat things with the calorie data:
+
+```{r hypothesis test kcals p2}
+#trying it a different way
+exp2Kcals2 <- aov(kcals ~ diet*condition + Error(rat/(diet*condition)), data = datap2_kcals)
+summary(exp2Kcals2) 
+
+#And a third way because the first two don't match
+kcals.aov2 <- ezANOVA(data = datap2_kcals,
+                    dv = .(kcals),
+                    wid = .(rat),
+                    within = .(diet, condition),
+                    return_aov = TRUE,
+                    type = 2)
+kcals.aov2$ANOVA
+```
+
+```{r pairwise tests 2 p2}
+pairwiseKcals2 <- datap2_kcals %>%
+  pairwise_t_test(kcals~diet, paired = TRUE,
+                  p.adjust.method = "bonferroni")
+pairwiseKcals2
+```
+
+A similar picture as with the weight data, but here the diet x condition interaction is very much approaching significance (p = .066). Maybe something to circle back to; perhaps baseline preferences did have a small impact on the effect of naltrexone.
+
+## Part 3
+
+### Data Prep
