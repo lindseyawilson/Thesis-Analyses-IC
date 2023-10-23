@@ -151,6 +151,8 @@ pairwiseGrams <- datap1_grams %>%
   pairwise_t_test(grams~diet, paired = TRUE,
                   p.adjust.method = "bonferroni")
 pairwiseGrams
+
+#TukeyHSD(x = exp2Grams, conf.level = 0.95)
 ```
 So from this it looks like even with Bonferroni corrections we have a decent number of significant comparisons. 80% and 20% don't actually significantly differ from each other (which is fascinating) but they're more consumed than pretty much everything else. 
 
