@@ -22,6 +22,8 @@ library(emmeans)
 library(car)
 library(Hmisc)
 library(corrplot)
+library(multcomp)
+library(lme4)
 ```
 
 Now let's take a second to think about the data we have. Overall I have seven days on the full paradigm without injection, two full days with either saline or naltrexone injection, two days with either pure fat or pure sugar only, and a final two days with each animal's favorite diet ( measured as mean average kcal eaten per day) following either saline or naltrexone injection.
@@ -151,10 +153,20 @@ pairwiseGrams <- datap1_grams %>%
   pairwise_t_test(grams~diet, paired = TRUE,
                   p.adjust.method = "bonferroni")
 pairwiseGrams
-
-#TukeyHSD(x = exp2Grams, conf.level = 0.95)
 ```
 So from this it looks like even with Bonferroni corrections we have a decent number of significant comparisons. 80% and 20% don't actually significantly differ from each other (which is fascinating) but they're more consumed than pretty much everything else. 
+
+And finally, let's do an explicit contrast comparing the individual diets with the blends:
+
+```{r contrast grams 1}
+#grams.em1 <- emmeans(grams.aov$aov, ~diet * day)
+
+#contrast_names <- list(c(2, -1, -1, -1, -1, 2,
+ #                        2, -1, -1, -1, -1, 2,
+  #                       2, -1, -1, -1, -1, 2))
+#contrast(grams.em1,
+ #        method = contrast_names)
+```
 
 For completeness sake, I want to do this all over again with the calorie data
 
@@ -178,6 +190,16 @@ pairwiseKcals <- datap1_kcals %>%
   pairwise_t_test(kcals~diet, paired = TRUE,
                   p.adjust.method = "bonferroni")
 pairwiseKcals
+```
+
+```{r contrast kcal 1}
+#kcals.em1 <- emmeans(kcals.aov$aov, ~diet * day)
+
+#contrast_names <- list(c(2, -1, -1, -1, -1, 2,
+ #                        2, -1, -1, -1, -1, 2,
+  #                       2, -1, -1, -1, -1, 2))
+#contrast(kcals.em1,
+ #        method = contrast_names)
 ```
 
 So again, a similar story. So far, things are looking how we expected!
@@ -272,6 +294,17 @@ pairwiseGrams2 <- datap2_grams %>%
 pairwiseGrams2
 ```
 
+```{r contrast grams 2}
+
+#grams.em2 <- emmeans(grams.aov2$aov, ~diet * condition)
+
+#contrast_names <- list(c(2, -1, -1, -1, -1, 2,
+ #                        2, -1, -1, -1, -1, 2))
+#contrast(grams.em2,
+ #        method = contrast_names)
+     
+```
+
 So a similar story as from part 1. I would argue in this part of the experiment the rats showed a slightly more pronounced preference for the 20% diet over the 80%, but inferentially the picture is pretty similar.
 
 Again for completeness, let's repeat things with the calorie data:
@@ -296,6 +329,15 @@ pairwiseKcals2 <- datap2_kcals %>%
   pairwise_t_test(kcals~diet, paired = TRUE,
                   p.adjust.method = "bonferroni")
 pairwiseKcals2
+```
+
+```{r contrast kcal 2}
+#kcals.em2 <- emmeans(kcals.aov2$aov, ~diet * condition)
+
+#contrast_names <- list(c(2, -1, -1, -1, -1, 2,
+ #                        2, -1, -1, -1, -1, 2))
+#contrast(kcals.em2,
+ #        method = contrast_names)
 ```
 
 A similar picture as with the weight data, but here the diet x condition interaction is very much approaching significance (p = .066). Maybe something to circle back to; perhaps baseline preferences did have a small impact on the effect of naltrexone.
