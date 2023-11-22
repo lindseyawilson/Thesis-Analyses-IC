@@ -24,6 +24,7 @@ library(Hmisc)
 library(corrplot)
 library(multcomp)
 library(lme4)
+library(writexl)
 ```
 
 Now let's take a second to think about the data we have. Overall I have seven days on the full paradigm without injection, two full days with either saline or naltrexone injection, two days with either pure fat or pure sugar only, and a final two days with each animal's favorite diet ( measured as mean average kcal eaten per day) following either saline or naltrexone injection.
@@ -128,7 +129,8 @@ data_groupedByDiet %>%
                 size = 0.2) +
   scale_x_discrete(labels = my_diet_labels) +
   labs(x = "Diet (% sugar by weight)",
-       y = "Intake (kcal)")
+       y = "Intake (kcal)") +
+  theme_classic()
 
 ## Gram bar graph
 #mean calories for each rat (collapsed across days, conditions, and drug condition)
@@ -168,7 +170,8 @@ data_groupedByDiet %>%
                 size = 0.2) +
   scale_x_discrete(labels = my_diet_labels) +
   labs(x = "Diet (% sugar by weight)",
-       y = "Intake (grams)")
+       y = "Intake (grams)") +
+  theme_classic()
 ```
 This is interesting, and very different from the ID data. Here, it looks like there was a bifurcation between twenty and eighty percent as favorite diets. I already knew this since we had to give each rat it's favorite diet later in the study, but it's interesting to see it look so pronounced here.
 
@@ -385,7 +388,8 @@ data_groupedByDiet %>%
   scale_fill_discrete(labels = my_fill_labels) +
   labs(x = "Drug Condition",
        y = "Intake (kcal)",
-       fill = "Diet (% sugar)")
+       fill = "Diet (% sugar)") +
+  theme_classic()
 
 ##Grams
 #mean calories for each rat (collapsed across days, conditions, and drug condition)
@@ -431,7 +435,8 @@ data_groupedByDiet %>%
   scale_fill_discrete(labels = my_fill_labels) +
   labs(x = "Drug Condition",
        y = "Intake (grams)",
-       fill = "Diet (% sugar)")
+       fill = "Diet (% sugar)") +
+  theme_classic()
 ```
 Once again, the difference here is pretty stark. At least descriptively, naltrexone definitely decreased consumption, and it also functioned to sharply decrease the variability in the amount of each diet rats consumed.
 
@@ -601,7 +606,8 @@ data_groupedByDiet %>%
                 size = 0.2) +
   scale_x_discrete(labels = my_diet_labels) +
   labs(x = "Diet Condition",
-       y = "Intake (kcal)")
+       y = "Intake (kcal)") +
+  theme_classic()
 
 ## Gram bar graph
 #mean calories for each rat (collapsed across days, conditions, and drug condition)
@@ -636,7 +642,8 @@ data_groupedByDiet %>%
                 size = 0.2) +
   scale_x_discrete(labels = my_diet_labels) +
   labs(x = "Diet Condition",
-       y = "Intake (grams)")
+       y = "Intake (grams)") +
+  theme_classic()
 ```
 Things actually don't look as different between the kcal and weight data as I expected. However, I think it's going to be particularly important to present both pictures here so that the reader can draw their own conclusions.
 
@@ -701,3 +708,38 @@ pairwiseKcals3
 And here we do have a significant difference between naltrexone intake and sugar. I think this is an interesting result, but it's going to be difficult to present it. Also interestingly, there actually isn't a difference between fat intake and vehicle intake here, although I'm skeptical of this result because the fat is nearly double as caloric as the 20% diet that nearly half the rats preferred. 
 
 I think this does it for now! I'll probably want to come back and make a few plots, but for now I know the story I'm telling!
+
+## Sike, more stuff
+
+I need to add code to output some of these datasets to SPSS for double-checking:
+
+```{r spss data}
+#Part 1
+data_p1_kcals_wide <- datap1_kcals %>%
+ pivot_wider(names_from = c(diet, day), values_from = kcals)
+#write_xlsx(data_p1_kcals_wide, "/Users/lawilson1999/Library/Mobile Documents/com~apple~CloudDocs/Psychology MA/Second Year (2022-2023)/Thesis/Thesis Analyses (IC)//data_p1_kcals_wide.xlsx")
+
+data_p1_grams_wide <- datap1_grams %>%
+ pivot_wider(names_from = c(diet, day), values_from = grams)
+#write_xlsx(data_p1_grams_wide, "/Users/lawilson1999/Library/Mobile Documents/com~apple~CloudDocs/Psychology MA/Second Year (2022-2023)/Thesis/Thesis Analyses (IC)//data_p1_grams_wide.xlsx")
+
+#Part 2
+data_p2_kcals_wide <- datap2_kcals %>%
+  pivot_wider(names_from = c(condition, diet), values_from = kcals)
+#write_xlsx(data_p2_kcals_wide, "/Users/lawilson1999/Library/Mobile Documents/com~apple~CloudDocs/Psychology MA/Second Year (2022-2023)/Thesis/Thesis Analyses (IC)//data_p2_kcals_wide.xlsx")
+
+data_p2_grams_wide <- datap2_grams %>%
+  pivot_wider(names_from = c(condition, diet), values_from = grams)
+#write_xlsx(data_p2_grams_wide, "/Users/lawilson1999/Library/Mobile Documents/com~apple~CloudDocs/Psychology MA/Second Year (2022-2023)/Thesis/Thesis Analyses (IC)//data_p2_grams_wide.xlsx")
+
+#Part 3
+data_p3_kcals_wide <- datap3_kcals %>%
+  subset(select = -fav_blend) %>%
+  pivot_wider(names_from = condition, values_from = kcals)
+#write_xlsx(data_p3_kcals_wide, "/Users/lawilson1999/Library/Mobile Documents/com~apple~CloudDocs/Psychology MA/Second Year (2022-2023)/Thesis/Thesis Analyses (IC)//data_p3_kcals_wide.xlsx")
+
+data_p3_grams_wide <- datap3_grams %>%
+  subset(select = -fav_blend) %>%
+  pivot_wider(names_from = condition, values_from = grams)
+#write_xlsx(data_p3_grams_wide, "/Users/lawilson1999/Library/Mobile Documents/com~apple~CloudDocs/Psychology MA/Second Year (2022-2023)/Thesis/Thesis Analyses (IC)//data_p3_grams_wide.xlsx")
+```
