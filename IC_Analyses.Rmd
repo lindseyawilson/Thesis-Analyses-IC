@@ -129,8 +129,8 @@ data_groupedByDiet %>%
                 size = 0.2) +
   scale_x_discrete(labels = my_diet_labels) +
   labs(x = "Diet (% sugar by weight)",
-       y = "Intake (kcal)") +
-  theme_classic()
+       y = "Intake (kcals)") +
+  theme_classic(base_size = 18)
 
 ## Gram bar graph
 #mean calories for each rat (collapsed across days, conditions, and drug condition)
@@ -171,7 +171,7 @@ data_groupedByDiet %>%
   scale_x_discrete(labels = my_diet_labels) +
   labs(x = "Diet (% sugar by weight)",
        y = "Intake (grams)") +
-  theme_classic()
+  theme_classic(base_size = 18)
 ```
 This is interesting, and very different from the ID data. Here, it looks like there was a bifurcation between twenty and eighty percent as favorite diets. I already knew this since we had to give each rat it's favorite diet later in the study, but it's interesting to see it look so pronounced here.
 
@@ -389,7 +389,7 @@ data_groupedByDiet %>%
   labs(x = "Drug Condition",
        y = "Intake (kcal)",
        fill = "Diet (% sugar)") +
-  theme_classic()
+  theme_classic(base_size = 18)
 
 ##Grams
 #mean calories for each rat (collapsed across days, conditions, and drug condition)
@@ -436,7 +436,7 @@ data_groupedByDiet %>%
   labs(x = "Drug Condition",
        y = "Intake (grams)",
        fill = "Diet (% sugar)") +
-  theme_classic()
+  theme_classic(base_size = 18)
 ```
 Once again, the difference here is pretty stark. At least descriptively, naltrexone definitely decreased consumption, and it also functioned to sharply decrease the variability in the amount of each diet rats consumed.
 
@@ -482,6 +482,8 @@ pairwiseGrams2
  #        method = contrast_names)
      
 ```
+
+
 
 So a similar story as from part 1. I would argue in this part of the experiment the rats showed a slightly more pronounced preference for the 20% diet over the 80%, but inferentially the picture is pretty similar.
 
@@ -607,7 +609,8 @@ data_groupedByDiet %>%
   scale_x_discrete(labels = my_diet_labels) +
   labs(x = "Diet Condition",
        y = "Intake (kcal)") +
-  theme_classic()
+  theme_classic(base_size = 18) +
+  theme(axis.text.x = element_text(size = 11))
 
 ## Gram bar graph
 #mean calories for each rat (collapsed across days, conditions, and drug condition)
@@ -643,7 +646,8 @@ data_groupedByDiet %>%
   scale_x_discrete(labels = my_diet_labels) +
   labs(x = "Diet Condition",
        y = "Intake (grams)") +
-  theme_classic()
+  theme_classic(base_size = 18) +
+  theme(axis.text.x = element_text(size = 11))
 ```
 Things actually don't look as different between the kcal and weight data as I expected. However, I think it's going to be particularly important to present both pictures here so that the reader can draw their own conclusions.
 
